@@ -10,13 +10,15 @@ class Gamer {
       this._isRight = false;
       this._isFalling = false;
       this._isPlummeting = false;
+      this.isMoving = true;
   }
   resetAll(){
-    this._score = 0;
-    this._gamer = Object.assign({}, this._gamerStart);
+    this.resetParam();
+    this._gamer.life = this._gamerStart.life;
   }
   resetParam(){
     this._score = 0;
+    this.isMoving = true;
     this._gamer.x = this._gamerStart.x;
     this._gamer.y = this._gamerStart.y;
   }
@@ -66,7 +68,7 @@ class Gamer {
   }
 
   isDo(platform){
-    if(this._gamer.y <= this._gamerStart.y + 3){
+    if(this._gamer.y <= this._gamerStart.y + 3 && this.isMoving){
       if(this._isLeft){
         this._gamer.x -= this._step;
       }
@@ -97,6 +99,7 @@ class Gamer {
       y: 10,
       side: false
     };
+    
 
     if(this._isLeft && this._isFalling){
       offset.x[0] = 5;
@@ -131,6 +134,7 @@ class Gamer {
 
     // body
     fill(199, 0, 255);
+    
     ellipse(this._gamer.x + 25 / 2, this._gamer.y - 30, 30, 50);
     if(offset.side){
       strokeWeight(1);
@@ -138,6 +142,7 @@ class Gamer {
       rect((this._gamer.x + 25 / 2) - 2, this._gamer.y - 50, 4, 30);
       noStroke();
     }
+    
     // legs
     fill(127, 102, 3);
     rect(this._gamer.x + offset.x[0], this._gamer.y - offset.y, 10, 10);
@@ -248,11 +253,54 @@ function Platworm(x, y, width){
     fill(88, 99, 107);
     for(let i = 0; i < this.width; i++){
       stroke(255);
+      strokeWeight(1);
       rect( this.x + i * 20, this.y, 20, 10 );
     }
   }
   this.check = (gamer) => {
     if((this.x - 30 < gamer.x && this.x + this.width * 20> gamer.x)){
+      return true;
+    }
+    return false;
+  }
+}
+
+function Enemie(x, width, y){
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this._widthNow = width;
+  this._xStart = x;
+  // this.isFound = false;
+  this.incr = 1;
+  this.drawEnemie = () => {
+    stroke(255, 0, 0 );
+    strokeWeight(4);
+    if(this._widthNow >= this.width + this.x){
+      this.incr *= -1;
+      this._xStart = this.x;
+    }
+    if(this._widthNow <= this.x){
+      this.incr *= -1;
+      this._xStart = this.x + this.width;
+    }
+    line(this._xStart, this.y, this._widthNow, this.y);
+    noStroke();
+    this._widthNow += this.incr;
+  }
+  this.check = (gamer) => {
+    const gamerDist = 5;
+    const maxX = max(this._xStart, this._widthNow);
+    const minX = min(this._xStart, this._widthNow);
+    const regarding = {
+      x: 12,
+      y: 20
+    }
+    if(dist(gamer.getGamer().x + regarding.x, gamer.getGamer().y - regarding.y, this._xStart, this.y) < gamerDist || 
+      dist(gamer.getGamer().x + regarding.x, gamer.getGamer().y - regarding.y, this._widthNow, this.y) < gamerDist ||
+      minX < gamer.getGamer().x && maxX > gamer.getGamer().x && distance(gamer.getGamer().y, this.y) < 5
+      ){
+      
       return true;
     }
     return false;
@@ -265,20 +313,25 @@ let ground = frameHeight - 100;
 
 let cameraPosX = 0;
 
-let clouds = {
-  x: [100, 150, 489, 596, 400], 
-  y: [100, 125, 103, 90, 50], 
-  size: [50, 30, 45, 60, 15]
+const clouds = {
+  x: [-300, -250, -150, -100, 100, 150, 489, 596, 400, 1030, 800, 1500, 1379, 2000, 1700, 1850, 1430], 
+  y: [200,140,100, 135,100, 125, 103, 90, 50, 30, 110, 150, 130, 200, 115, 70, 40], 
+  size: [15, 50, 40 ,20, 50, 30, 45, 60, 15, 58, 47, 70, 20, 30, 70, 60, 65]
 };
 
-let mountains = {
-  x: [90, 150, 565, 650],
-  size: [0.5, 1, 1.1, 0.8]
+const mountains = {
+  x: [90, 150, 565, 650, 1900, 2050],
+  size: [0.5, 1, 1.1, 0.8, 0.6, 1.5]
 };
 
-let treesArray = [-150, 0, 180, 560, 600, 1000, 1500];
+const enemiesPar = {
+  x: [0, -100, 505],
+  width: [150, -200, 600]
+}
 
-let platforms = {
+const treesArray = [-150, 0, 180, 560, 600, 1000, 1500];
+
+const platforms = {
   x: [0, 170, 500, 1000, 1500],
   y: ground - 100,
   count: [3, 5, 2, 4, 7],
@@ -287,13 +340,13 @@ let platforms = {
 
 // let platformsY = ground - 100;
 
-let collectable = [80, -20, 500].map((index) => { return new Collectable(index, ground) });
+let collectable = [80, -20, 500, 1050].map((index) => { return new Collectable(index, ground) });
 platforms.x.map((currentValue, index) => {
-  console.log((platforms.count[index] * 20 / 2) + currentValue, platforms.y);
   collectable.push(new Collectable((platforms.count[index] * 20 / 2) + currentValue - 15, platforms.y));
 
 });
-let canyon = [350, 750, 1100].map((index) => {return new Canyon(index, frameHeight)});
+let canyon = [350, 750, 1100, 1700].map((index) => {return new Canyon(index, frameHeight)});
+
 
 const gamerPeople = new Gamer({ x: frameWidth / 2 - 100, y: ground, life: 3 }, {x: 30, y: 50});
 const flag = new Flagpole(2000, ground);
@@ -301,6 +354,7 @@ const flag = new Flagpole(2000, ground);
 let soundJump;
 let soundGift;
 let platObj = [];
+let enemies = [];
 
 function preload() {
   soundFormats('mp3', 'wav');
@@ -313,6 +367,13 @@ function preload() {
 
 function setup(){
 	createCanvas(frameWidth, frameHeight);
+  for(let i = 0; i < platforms.x.length; i++){
+    platObj.push(new Platworm(platforms.x[i], platforms.y, platforms.count[i]));
+  }
+  for(let i = 0; i < enemiesPar.x.length; i++){
+    enemies.push(new Enemie(enemiesPar.x[i], enemiesPar.width[i], ground - 20));
+    console.log(enemiesPar.x[i], enemiesPar.width[i], ground - 20);
+  }
   startGame(gamerPeople);
 }
 
@@ -345,6 +406,7 @@ function draw()
     textSize(32);
     textAlign(CENTER);
     text('Game over. Press space to continue.', frameWidth / 2, frameHeight /2);
+    gamerPeople.isMoving = false;
     restartGame();
   }
   
@@ -353,6 +415,7 @@ function draw()
   drawMountains();
 
   checkPlayersDie(gamerPeople);
+
  
   flag.renderFlagpole();
 
@@ -363,6 +426,14 @@ function draw()
   canyon.forEach(element => element.drawCanyon(gamerPeople));
 
   platObj.forEach(element => element.drawPlatworm());
+
+  enemies.forEach(element => {
+    element.drawEnemie();
+    if(element.check(gamerPeople)){
+      delLife(gamerPeople);
+    }
+  });
+  // if(enemies.check(gamerPeople)){delLife(gamerPeople);}
 
   gamerPeople.drawGamer();
 
@@ -415,20 +486,20 @@ function drawTrees(treesX, treesY){
 }
 
 function checkPlayersDie(gamer){
-  if(gamer.getGamer().y > frameHeight && gamer.getGamer().life > 0){
+  if(gamer.getGamer().y > frameHeight){
+    delLife(gamer);
+  }
+}
+
+function delLife(gamer){
+  
+  if(gamer.getGamer().life > 0){
     gamer.removeLife();
-    if(gamer.getGamer().life > 0){
-      startGame(gamer);
-    }
+    startGame(gamer);
   }
 }
 
 function startGame(gamer){
-  for(let i = 0; i < platforms.x.length; i++){
-    platObj.push(new Platworm(platforms.x[i], platforms.y, platforms.count[i]));
-  }
-
-
   collectable.forEach(element => element.isFound = false);
   gamer.resetParam();
   flag.isReached = false;
