@@ -131,15 +131,24 @@ class Gamer {
     // header
     fill(255, 140, 0);
     circle(this._gamer.x + 25 / 2, this._gamer.y - 65, 25);
-
+    fill(81, 128, 78);
+    rect(this._gamer.x, this._gamer.y - 80, 25, 10);
+    strokeWeight(4);
+    stroke(81, 128, 78);
+    line(this._gamer.x, this._gamer.y - 75, this._gamer.x - 10, this._gamer.y - 80);
+    line(this._gamer.x + 25, this._gamer.y - 75, this._gamer.x + 35, this._gamer.y - 80);
+    noStroke();
     // body
     fill(199, 0, 255);
     
     ellipse(this._gamer.x + 25 / 2, this._gamer.y - 30, 30, 50);
     if(offset.side){
+      fill(255, 140, 0);
+      rect((this._gamer.x + 25 / 2) - 2, this._gamer.y - 50, 4, 30);
       strokeWeight(1);
       stroke(0);
-      rect((this._gamer.x + 25 / 2) - 2, this._gamer.y - 50, 4, 30);
+      fill(199, 0, 255); 
+      rect((this._gamer.x + 25 / 2) - 4, this._gamer.y - 50, 8, 10);
       noStroke();
     }
     
@@ -394,12 +403,8 @@ function draw()
 
   gamerPeople.drawLife();
 
-  flag.status(gamerPeople);
-
   push();
   translate(-cameraPosX, 0);
-
-  
 
   if(gamerPeople.getGamer().life < 1){
     fill(255);
@@ -438,6 +443,8 @@ function draw()
   gamerPeople.drawGamer();
 
   pop();
+
+  flag.status(gamerPeople);
   
   canyon.forEach(element => element.check(gamerPeople));
 
