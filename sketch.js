@@ -35,7 +35,6 @@ class Gamer {
     }
     if(keyCode == 32 || keyCode == 87 || keyCode == 38){
       this._isFalling = bolSwitch;
-      // this._isPlummeting = false;
       this._gamer.isFalling = this._isFalling;
     }
   }
@@ -101,17 +100,11 @@ class Gamer {
     };
     
 
-    if(this._isLeft && this._isFalling){
-      offset.x[0] = 5;
+    if(this._isFalling || this._isPlummeting){
       offset.x[1] = 15;
-      offset.y = 13;
+      offset.y = 15;
     }
-    else if(this._isRight && this._isFalling){
-      offset.x[1] = 10;
-      offset.y = 13;
-      offset.side = true;
-    }
-    else if(this._isLeft){
+    if(this._isLeft){
       offset.x[0] = 5;
       offset.x[1] = 15;
       offset.side = true;
@@ -119,10 +112,6 @@ class Gamer {
     else if(this._isRight){
       offset.x[1] = 10;
       offset.side = true;
-    }
-    else if(this._isFalling || this._isPlummeting){
-      offset.x[1] = 15;
-      offset.y = 13;
     }
     else{
       offset.x[1] = 15;
@@ -280,7 +269,6 @@ function Enemie(x, width, y){
   this.width = width;
   this._widthNow = width;
   this._xStart = x;
-  // this.isFound = false;
   this.incr = 1;
   this.drawEnemie = () => {
     stroke(255, 0, 0 );
@@ -307,7 +295,7 @@ function Enemie(x, width, y){
     }
     if(dist(gamer.getGamer().x + regarding.x, gamer.getGamer().y - regarding.y, this._xStart, this.y) < gamerDist || 
       dist(gamer.getGamer().x + regarding.x, gamer.getGamer().y - regarding.y, this._widthNow, this.y) < gamerDist ||
-      minX < gamer.getGamer().x && maxX > gamer.getGamer().x && distance(gamer.getGamer().y, this.y) < 5
+      minX < gamer.getGamer().x && maxX > gamer.getGamer().x && distance(gamer.getGamer().y, this.y) < 25
       ){
       
       return true;
@@ -346,9 +334,6 @@ const platforms = {
   count: [3, 5, 2, 4, 7],
 };
 
-
-// let platformsY = ground - 100;
-
 let collectable = [80, -20, 500, 1050].map((index) => { return new Collectable(index, ground) });
 platforms.x.map((currentValue, index) => {
   collectable.push(new Collectable((platforms.count[index] * 20 / 2) + currentValue - 15, platforms.y));
@@ -381,7 +366,6 @@ function setup(){
   }
   for(let i = 0; i < enemiesPar.x.length; i++){
     enemies.push(new Enemie(enemiesPar.x[i], enemiesPar.width[i], ground - 20));
-    console.log(enemiesPar.x[i], enemiesPar.width[i], ground - 20);
   }
   startGame(gamerPeople);
 }
@@ -405,15 +389,6 @@ function draw()
 
   push();
   translate(-cameraPosX, 0);
-
-  if(gamerPeople.getGamer().life < 1){
-    fill(255);
-    textSize(32);
-    textAlign(CENTER);
-    text('Game over. Press space to continue.', frameWidth / 2, frameHeight /2);
-    gamerPeople.isMoving = false;
-    restartGame();
-  }
   
   drawClouds();
 
@@ -421,14 +396,17 @@ function draw()
 
   checkPlayersDie(gamerPeople);
 
- 
+  // draw flag
   flag.renderFlagpole();
 
   treesArray.forEach(index => drawTrees(index, ground));
 
   collectable.forEach(element => element.check(gamerPeople));
 
-  canyon.forEach(element => element.drawCanyon(gamerPeople));
+  canyon.forEach(element => {
+    element.drawCanyon(gamerPeople);
+    element.check(gamerPeople);
+  });
 
   platObj.forEach(element => element.drawPlatworm());
 
@@ -438,15 +416,20 @@ function draw()
       delLife(gamerPeople);
     }
   });
-  // if(enemies.check(gamerPeople)){delLife(gamerPeople);}
 
   gamerPeople.drawGamer();
+  if(gamerPeople.getGamer().life < 1){
+    fill(255);
+    textSize(32);
+    textAlign(CENTER);
+    text('Game over. Press space to continue.', frameWidth / 2, frameHeight /2);
+    gamerPeople.isMoving = false;
+    restartGame();
+  }
 
   pop();
 
   flag.status(gamerPeople);
-  
-  canyon.forEach(element => element.check(gamerPeople));
 
   gamerPeople.isDo(platObj);
 }
@@ -499,7 +482,6 @@ function checkPlayersDie(gamer){
 }
 
 function delLife(gamer){
-  
   if(gamer.getGamer().life > 0){
     gamer.removeLife();
     startGame(gamer);
